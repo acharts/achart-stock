@@ -1,0 +1,35 @@
+{
+  "name": "achart-stock",
+  "version": "1.0.0",
+  "description": "stock for acharts",
+  "keywords": ["chart"],
+  "homepage": "",
+  "author": "shizy.shi@gmail.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acharts/achart-stock.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acharts/achart-stock/issues"
+  },
+  "licenses": "MIT",
+  "spm": {
+    "main": "astock.js",
+    "dependencies": {
+        "acharts" : "1.0.5"
+    },
+    "devDependencies": {
+      "expect.js": "0.3.1",
+      "sinon" : "1.6.0",
+      "event-simulate" : "1.0.0",
+      "jquery" : "1.9.1",
+      "acharts" : "1.0.5"
+    },
+    "engines": {
+      "seajs": "2.2.1"
+    },
+    "buildArgs": "--include standalone",
+
+    "tests": "tests/*.js"
+  }
+}
