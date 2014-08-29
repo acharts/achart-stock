@@ -123,7 +123,8 @@ Util.augment(Stock,{
             xAxis : {
                 type : 'time',
                 grid: null,
-                labels: null
+                labels : null,
+                autoAppend : 0
             },
             seriesOptions : {
                 areaCfg : {
@@ -347,13 +348,13 @@ Util.augment(Stock,{
 
             //存在pointStart
             if(pointStart && pointInterval){
-
                 var startIndex = startTime ? parseInt((startTime - pointStart) / pointInterval , 10) : 0,
-                    endIndex = endTime ? parseInt((endTime - pointStart) / pointInterval , 10) : data.length;
+                    endIndex = endTime ? Math.ceil((endTime - pointStart) / pointInterval) : data.length;
 
-                var newData = data.slice(startIndex,endIndex);
-
-                targetSeries.set('pointStart',startTime || pointStart);
+                startIndex = startIndex < 0 ? 0 : startIndex;
+                var newData = data.slice(startIndex,endIndex + 1);
+                var start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
+                targetSeries.set('pointStart',start);
                 targetSeries.changeData(newData);
 
             }else{

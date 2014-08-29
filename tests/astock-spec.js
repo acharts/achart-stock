@@ -194,7 +194,7 @@ describe('操作', function() {
     });
 
     it('控制区域和图形区域点是否一致',function(){
-        var expectData = data.slice(130,300);
+        var expectData = data.slice(130,301);
 
         var chart = stock.get('chart');
         var chartData = chart.getSeries()[0].get('data');
