@@ -1,5 +1,48 @@
 var Chart = require('acharts')//window.AChart,
-    Util = Chart.Util;
+    Util = Chart.Util,
+    Theme = Chart.Theme;
+
+Theme.rangeSelector = {
+    tooltip: null,
+    legend: null,
+    animate: false,
+    title : {
+        text : ''
+    },
+    subTitle : {
+        text : ''
+    },
+    yAxis : {
+        grid: null,
+        labels: null,
+        title : {
+            text : '',
+            rotate : -90
+        }
+    },
+    xAxis : {
+        type : 'time',
+        grid: null,
+        labels : null,
+        autoAppend : 0
+    },
+    seriesOptions : {
+        areaCfg : {
+            markers: null,
+            animate: false,
+            area: {
+             fill : 'rgb(245,247,250)',
+             stroke : '#cccccc',
+             'stroke-width': 1
+            }
+        }
+    },
+
+    sync: false,
+    changeZoom: null,
+
+    zoom: null
+};
 
 var Stock = function(cfg){
     this._attrs = Util.mix({},Stock.ATTRS,cfg);
@@ -13,6 +56,12 @@ Stock.ATTRS = {
      * @type {Object}
      */
     zoom: null,
+
+    /**
+     * 区域选择配置项
+     * @type {Object}
+     */
+    rangeSelectorOption: null,
 
     /**
      * chart对象
@@ -63,21 +112,42 @@ Util.augment(Stock,{
     paint: function(){
         var _self = this;
 
-        _self._addTwoCharts();
+        //初始化container
+        _self._initContainer();
+        //初始化rangeSelector
+        _self._initRangeSelector();
+        //初始化chart
+        _self._initChart();
 
+        //修正rangeSelector的series
         _self._fixRangeSelectorSeries();
-
+        //添加滑动条
         _self._addAreaSelectShapes();
+        //添加事件
         _self.dragEvents();
-
-        _self._fixChartSeries();
-        //_self.setZoom();
+        //渲染chart
+        _self._fixChartSeriesAndRender();
     },
-    //初始化两个chart
-    _addTwoCharts: function(){
+    //数据修改
+    changeData: function(data){
+        var _self = this,
+            rangeSelector = _self.get('rangeSelector'),
+            zoom = rangeSelector.get('zoom') || _self.get('zoom'),
+            originData = _self.get('originData');
+
+        rangeSelector.changeData(data[0]);
+
+        Util.each(originData,function(item,index){
+            item.data = data[index];
+        });
+
+        !zoom ? _self.setZoom() : _self.setZoom(zoom[0],zoom[1]);
+    },
+    //初始化dom
+    _initContainer: function(){
         var _self = this,
             margin = _self.get('margin')
-            id = _self.get('id') || _self.get('render') || '';
+        id = _self.get('id') || _self.get('render') || '';
         id = id.replace('#','');
 
         var el = document.getElementById(id),
@@ -91,87 +161,106 @@ Util.augment(Stock,{
         el.appendChild(chartHtml);
         el.appendChild(rangeSelectorHtml);
 
+        _self.set('chartHtml',chartHtml);
+        _self.set('rangeSelectorHtml',rangeSelectorHtml);
+
+        _self.set('chartHtmlId',chartId);
+        _self.set('rangeSelectorHtmlId',rangeSelectorId);
+    },
+    //初始化rangeSelector
+    _initRangeSelector: function(){
+        var _self = this,
+            margin = _self.get('margin'),
+            rangeSelectorHtml = _self.get('rangeSelectorHtml'),
+            rangeSelectorId = _self.get('rangeSelectorHtmlId'),
+            width = _self.get('width') || Util.getWidth(rangeSelectorHtml);
+
+        var options = Util.mix({},Theme.rangeSelector,_self.get('rangeSelectorOption'));
+
+        options = Util.mix({},options,{
+            id: rangeSelectorId,
+            animate: false,
+            width: width,
+            height: 55,
+            plotCfg : {
+                margin : [5,margin,15,margin] //画板的边距
+            }
+        });
+        var rangeSelector = new Chart(options);
+
+        _self.set('rangeSelector',rangeSelector);
+    },
+    //初始化cchart
+    _initChart: function(){
+        var _self = this,
+            margin = _self.get('margin'),
+            chartHtml = _self.get('chartHtml'),
+            chartId = _self.get('chartHtmlId'),
+            width = _self.get('width') || Util.getWidth(chartHtml),
+            height = _self.get('height') || Util.getHeight(chartHtml);
+
         var chart = new Chart(Util.mix({},_self._attrs,{
             id: chartId,
             width: width,
             height: height - 70
         }))
 
-        var rangeSelector = new Chart(Util.mix({},_self._attrs,{
-            id: rangeSelectorId,
-            width: width,
-            height: 55,
-            plotCfg : {
-                margin : [5,margin,15,margin] //画板的边距
-            },
-            tooltip: null,
-            legend: null,
-            title : {
-                text : ''
-            },
-            subTitle : {
-                text : ''
-            },
-            yAxis : {
-                grid: null,
-                labels: null,
-                title : {
-                    text : '',
-                    rotate : -90
-                }
-            },
-            xAxis : {
-                type : 'time',
-                grid: null,
-                labels : null,
-                autoAppend : 0
-            },
-            seriesOptions : {
-                areaCfg : {
-                    markers: null,
-                    animate: false
-                }
-            }
-        }))
-
         _self.set('chart',chart);
-        _self.set('rangeSelector',rangeSelector);
-
-        _self.set('chartHtml',chartHtml);
-        _self.set('rangeSelectorHtml',rangeSelectorHtml);
     },
     //修正series
-    _fixChartSeries: function(){
+    _fixChartSeriesAndRender: function(){
         var _self = this,
-            chart = _self.get('chart');
-        var series = chart.get('series');
+            chart = _self.get('chart'),
+            rangeSelector = _self.get('rangeSelector'),
+            chartSeries = chart.get('series'),
+            zoom = rangeSelector.get('zoom') || _self.get('zoom');
 
-        Util.each(series,function(item,index){
-            Util.mix(item,{
-                animate: false
-            });
+        Util.each(chartSeries,function(item,index){
+            item.data = [];
         });
 
         chart.render();
+
+        !zoom ? _self.setZoom() : _self.setZoom(zoom[0],zoom[1]);
     },
     //修正series
     _fixRangeSelectorSeries: function(){
         var _self = this,
-            rangeSelector = _self.get('rangeSelector');
-        var series = rangeSelector.get('series'),
+            rangeSelector = _self.get('rangeSelector'),
+            chart = _self.get('chart');
+        var series = chart.get('series'),
             newSeries = [];
-        Util.each(series,function(item,index){
-            var newItem = Util.mix({},item,{
-                type: 'area',
-                animate: false,
-                area: {
-                    fill : 'rgb(245,247,250)',
-                    stroke : '#cccccc',
-                    'stroke-width': 1
+
+        //数据缓存
+        Object.prototype.clone = function() {
+            var o = {};
+            for (var i in this) {
+                o[i] = this[i];
+            }
+            return o;
+        };
+        Array.prototype.clone = function() {
+            var arr = [];
+            for (var i = 0; i < this.length; i++)
+                if (typeof this[i] !== 'object') {
+                    arr.push(this[i]);
+                } else {
+                    arr.push(this[i].clone());
                 }
-            });
+            return arr;
+        };
+        var originData = series.clone();
+        _self.set('originData',originData);
+
+        if(series.length > 0){
+            //强制属性
+            var options = Util.mix({},{
+                type: 'area',
+                animate: false
+            },rangeSelector.get('seriesOptions').areaCfg);
+            var newItem = Util.mix({},series[0],options);
             newSeries.push(newItem);
-        });
+        }
         rangeSelector.set('series',newSeries);
 
         rangeSelector.render();
@@ -249,9 +338,6 @@ Util.augment(Stock,{
             stroke: "#666666",
             fill: '#666666'
         });
-
-
-
 
         var path = 'M' + (width/2 - 3) + ',44L' + (width/2 - 3) + ',49'
             +'M' + (width/2) + ',44L' + (width/2) + ',49'
@@ -333,56 +419,68 @@ Util.augment(Stock,{
 
         return path;
     },
+    //设置时间区域
     setZoom: function(startTime,endTime,isInner){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
-            series = rangeSelector.getSeries(),
+            //是否异步
+            sync = rangeSelector.get('sync'),
+            //callback
+            changeZoom = rangeSelector.get('changeZoom'),
+            series = _self.get('originData'),
             chart =_self.get('chart'),
-            chartSeries = chart.getSeries()
+            chartSeries = chart.getSeries();
 
-        Util.each(series,function(item, index){
-            var data = item.get('data'),
-                targetSeries = chartSeries[index],
-                pointStart = item.get('pointStart'),
-                pointInterval = item.get('pointInterval');
+        if(!sync){
+            Util.each(series,function(item, index){
+                var data = item.data,
+                    targetSeries = chartSeries[index],
+                    pointStart = item.pointStart,
+                    pointInterval = item.pointInterval;
 
-            //存在pointStart
-            if(pointStart && pointInterval){
-                var startIndex = startTime ? parseInt((startTime - pointStart) / pointInterval , 10) : 0,
-                    endIndex = endTime ? Math.ceil((endTime - pointStart) / pointInterval) : data.length;
+                //存在pointStart
+                if(pointStart && pointInterval){
+                    var startIndex = startTime ? parseInt((startTime - pointStart) / pointInterval , 10) : 0,
+                        endIndex = endTime ? Math.ceil((endTime - pointStart) / pointInterval) : data.length;
 
-                startIndex = startIndex < 0 ? 0 : startIndex;
-                var newData = data.slice(startIndex,endIndex + 1);
-                var start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
-                targetSeries.set('pointStart',start);
-                targetSeries.changeData(newData);
+                    startIndex = startIndex < 0 ? 0 : startIndex;
+                    var newData = data.slice(startIndex,endIndex + 1);
+                    var start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
+                    targetSeries.set('pointStart',start);
+                    targetSeries.changeData(newData);
 
-            }else{
-                var dataArr = [];
-                Util.each(data,function(model, i){
-                    var dataTime = model[0];
+                }else{
+                    var dataArr = [];
+                    Util.each(data,function(model, i){
+                        var dataTime = model[0];
 
-                    //如果是flag  特殊处理
-                    if(targetSeries.get('type') == 'flag'){
-                        dataTime = model.x
-                    }
+                        //如果是flag  特殊处理
+                        if(targetSeries.get('type') == 'flag'){
+                            dataTime = model.x
+                        }
 
-                    if( (!startTime || startTime <= dataTime) && (!endTime || endTime >= dataTime)){
-                        dataArr.push(model);
-                    }
-                });
-                targetSeries.changeData(dataArr);
-            }
-        });
+                        if( (!startTime || startTime <= dataTime) && (!endTime || endTime >= dataTime)){
+                            dataArr.push(model);
+                        }
+                    });
+                    targetSeries.changeData(dataArr);
+                }
+            });
+
+            chart.repaint();
+        }
 
         //选定area
         if(!isInner){
             _self.setNavigatorByTime(startTime,endTime)
         }
 
-        chart.repaint();
-
         _self.set('zoom',[startTime,endTime]);
+        rangeSelector.set('zoom',[startTime,endTime]);
+
+        //回调事件
+        changeZoom && changeZoom(startTime,endTime);
+
     },
     setNavigatorByTime: function(startTime,endTime){
         var _self = this,
