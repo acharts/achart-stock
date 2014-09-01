@@ -39,7 +39,7 @@ Theme.rangeSelector = {
     },
 
     sync: false,
-    changeZoom: null,
+    zoomChange: null,
 
     zoom: null
 };
@@ -121,10 +121,10 @@ Util.augment(Stock,{
 
         //修正rangeSelector的series
         _self._fixRangeSelectorSeries();
-        //添加滑动条
+        /*//添加滑动条
         _self._addAreaSelectShapes();
         //添加事件
-        _self.dragEvents();
+        _self.dragEvents();*/
         //渲染chart
         _self._fixChartSeriesAndRender();
     },
@@ -280,7 +280,7 @@ Util.augment(Stock,{
         var navigator = canvas.addGroup();
 
         //下面滑动条
-        navigator.addShape({
+        scrollBar = navigator.addShape({
             type: 'rect',
             id: 'scrollBar',
             attrs: {
@@ -292,6 +292,8 @@ Util.augment(Stock,{
                 fill: '#eeeeee'
             }
         });
+
+        _self.set('scrollBar',scrollBar);
 
         //上面线
         static_group.addShape('path',{
@@ -352,6 +354,8 @@ Util.augment(Stock,{
             }
         });
 
+        _self.set('navigator_bottom_path',navigator_bottom_path);
+
         var navigator_select_area = navigator.addShape({
             type: 'rect',
             id: 'navigator_select_area',
@@ -366,6 +370,8 @@ Util.augment(Stock,{
             }
         });
 
+        _self.set('navigator_select_area',navigator_select_area);
+
         var navigator_handle_left_path = navigator.addShape({
             id: 'navigator_handle_left_path',
             type: 'path',
@@ -374,6 +380,8 @@ Util.augment(Stock,{
                 stroke: "#000"
             }
         });
+
+        _self.set('navigator_handle_left_path',navigator_handle_left_path);
 
         var navigator_handle_left = navigator.addShape({
             type: 'rect',
@@ -389,6 +397,8 @@ Util.augment(Stock,{
             }
         });
 
+        _self.set('navigator_handle_left',navigator_handle_left);
+
         var navigator_handle_right_path = navigator.addShape({
             id: 'navigator_handle_right_path',
             type: 'path',
@@ -397,7 +407,7 @@ Util.augment(Stock,{
                 stroke: "#000"
             }
         });
-
+        _self.set('navigator_handle_right_path',navigator_handle_right_path);
 
         var navigator_handle_right = navigator.addShape({
             type: 'rect',
@@ -412,6 +422,8 @@ Util.augment(Stock,{
                 height: 15
             }
         });
+
+        _self.set('navigator_handle_right',navigator_handle_right);
     },
     _getHandlePath: function(x){
         var path = 'M' + (4 + x) + ',16L' + (4 + x ) + ',23'
@@ -420,13 +432,18 @@ Util.augment(Stock,{
         return path;
     },
     //设置时间区域
-    setZoom: function(startTime,endTime,isInner){
+    setZoom: function(startTime,endTime){
+        var _self = this;
+        _self._setZoom(startTime,endTime);
+        _self.setNavigatorByTime(startTime,endTime)
+    },
+    _setZoom: function(startTime,endTime){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
-            //是否异步
+        //是否异步
             sync = rangeSelector.get('sync'),
-            //callback
-            changeZoom = rangeSelector.get('changeZoom'),
+        //callback
+            zoomChange = rangeSelector.get('zoomChange'),
             series = _self.get('originData'),
             chart =_self.get('chart'),
             chartSeries = chart.getSeries();
@@ -470,17 +487,11 @@ Util.augment(Stock,{
             chart.repaint();
         }
 
-        //选定area
-        if(!isInner){
-            _self.setNavigatorByTime(startTime,endTime)
-        }
-
         _self.set('zoom',[startTime,endTime]);
         rangeSelector.set('zoom',[startTime,endTime]);
 
         //回调事件
-        changeZoom && changeZoom(startTime,endTime);
-
+        zoomChange && zoomChange(startTime,endTime);
     },
     setNavigatorByTime: function(startTime,endTime){
         var _self = this,
@@ -488,9 +499,17 @@ Util.augment(Stock,{
             width = rangeSelector.get('width'),
             margin = _self.get('margin'),
             canvas = rangeSelector.get('canvas'),
-            navigator = canvas.getLast(),
             xAxis = rangeSelector.get('seriesGroup').get('xAxis'),
-            navigator_select_area = navigator.find('navigator_select_area');
+            navigator_select_area = _self.get('navigator_select_area');
+
+        if(!navigator_select_area){
+            //添加滑动条
+             _self._addAreaSelectShapes();
+             //添加事件
+             _self.dragEvents();
+
+            navigator_select_area = _self.get('navigator_select_area');
+        }
 
         var x = xAxis.getOffset(startTime) || (margin),
             end_x = xAxis.getOffset(endTime) || (width - margin),
@@ -516,7 +535,7 @@ Util.augment(Stock,{
         var startValue_x = xAxis.getValue(startValue),
             endValue_x = xAxis.getValue(endValue);
 
-        _self.setZoom((startValue_x),(endValue_x),true);
+        _self._setZoom((startValue_x),(endValue_x),true);
 
 
     },
@@ -526,14 +545,13 @@ Util.augment(Stock,{
             rangeSelector = _self.get('rangeSelector'),
             width = rangeSelector.get('width'),
             canvas = rangeSelector.get('canvas'),
-            navigator = canvas.getLast(),
-            navigator_select_area = navigator.find('navigator_select_area'),
-            navigator_handle_left = navigator.find('navigator_handle_left'),
-            navigator_handle_left_path = navigator.find('navigator_handle_left_path'),
-            navigator_handle_right = navigator.find('navigator_handle_right'),
-            navigator_handle_right_path = navigator.find('navigator_handle_right_path'),
-            navigator_bottom_path = navigator.find('navigator_bottom_path'),
-            scrollBar = navigator.find('scrollBar'),
+            navigator_select_area = _self.get('navigator_select_area'),
+            navigator_handle_left = _self.get('navigator_handle_left'),
+            navigator_handle_left_path = _self.get('navigator_handle_left_path'),
+            navigator_handle_right = _self.get('navigator_handle_right'),
+            navigator_handle_right_path = _self.get('navigator_handle_right_path'),
+            navigator_bottom_path = _self.get('navigator_bottom_path'),
+            scrollBar = _self.get('scrollBar'),
             xAxis = rangeSelector.get('xAxis'),
             yAxis = rangeSelector.get('yAxis');
 
@@ -660,19 +678,9 @@ Util.augment(Stock,{
     //下侧button定位
     _changeBottomPath: function(){
         var _self = this,
-            margin = _self.get('margin'),
-            rangeSelector = _self.get('rangeSelector'),
-            width = rangeSelector.get('width'),
-            canvas = rangeSelector.get('canvas'),
-            navigator = canvas.getLast(),
-            navigator_select_area = navigator.find('navigator_select_area'),
-            navigator_handle_left = navigator.find('navigator_handle_left'),
-            navigator_handle_left_path = navigator.find('navigator_handle_left_path'),
-            navigator_handle_right = navigator.find('navigator_handle_right'),
-            navigator_handle_right_path = navigator.find('navigator_handle_right_path'),
-            navigator_bottom_path = navigator.find('navigator_bottom_path'),
-            xAxis = rangeSelector.get('xAxis'),
-            yAxis = rangeSelector.get('yAxis');
+            navigator_handle_left = _self.get('navigator_handle_left'),
+            navigator_handle_right = _self.get('navigator_handle_right'),
+            navigator_bottom_path = _self.get('navigator_bottom_path');
 
         var left = navigator_handle_left.attr('x') + 5,
             right = navigator_handle_right.attr('x') + 5,
@@ -692,19 +700,11 @@ Util.augment(Stock,{
     //根据选择区域 获取左右拖动按钮的位置
     _getHandleByArea: function(){
         var _self = this,
-            margin = _self.get('margin'),
-            rangeSelector = _self.get('rangeSelector'),
-            width = rangeSelector.get('width'),
-            canvas = rangeSelector.get('canvas'),
-            navigator = canvas.getLast(),
-            navigator_select_area = navigator.find('navigator_select_area'),
-            navigator_handle_left = navigator.find('navigator_handle_left'),
-            navigator_handle_left_path = navigator.find('navigator_handle_left_path'),
-            navigator_handle_right = navigator.find('navigator_handle_right'),
-            navigator_handle_right_path = navigator.find('navigator_handle_right_path'),
-            navigator_bottom_path = navigator.find('navigator_bottom_path'),
-            xAxis = rangeSelector.get('xAxis'),
-            yAxis = rangeSelector.get('yAxis');
+            navigator_select_area = _self.get('navigator_select_area'),
+            navigator_handle_left = _self.get('navigator_handle_left'),
+            navigator_handle_left_path = _self.get('navigator_handle_left_path'),
+            navigator_handle_right = _self.get('navigator_handle_right'),
+            navigator_handle_right_path = _self.get('navigator_handle_right_path');
 
         var currX = navigator_select_area.attr('x'),
             widthArea = navigator_select_area.attr('width');
@@ -723,16 +723,7 @@ Util.augment(Stock,{
             margin = _self.get('margin'),
             rangeSelector = _self.get('rangeSelector'),
             width = rangeSelector.get('width'),
-            canvas = rangeSelector.get('canvas'),
-            navigator = canvas.getLast(),
-            navigator_select_area = navigator.find('navigator_select_area'),
-            navigator_handle_left = navigator.find('navigator_handle_left'),
-            navigator_handle_left_path = navigator.find('navigator_handle_left_path'),
-            navigator_handle_right = navigator.find('navigator_handle_right'),
-            navigator_handle_right_path = navigator.find('navigator_handle_right_path'),
-            navigator_bottom_path = navigator.find('navigator_bottom_path'),
-            xAxis = rangeSelector.get('xAxis'),
-            yAxis = rangeSelector.get('yAxis');
+            navigator_select_area = _self.get('navigator_select_area')
 
         var widthArea = navigator_select_area.attr('width');
         //左边边界
