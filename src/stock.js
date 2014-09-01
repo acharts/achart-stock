@@ -139,7 +139,7 @@ Util.augment(Stock,{
     },
     /**
      * 修改数据
-     * @param  {Array}  新的数据源
+     * @param  {Array} data 新的数据源
      */
     changeData: function(data){
         var _self = this,
@@ -445,8 +445,8 @@ Util.augment(Stock,{
     },
     /**
      * 设置选中的时间区间
-     * @param  {Number}  时间的毫秒数
-     * @param  {Number}  时间的毫秒数
+     * @param  {Number} startTime  时间的毫秒数
+     * @param  {Number} endTime 时间的毫秒数
      */
     setZoom: function(startTime,endTime){
         var _self = this;
