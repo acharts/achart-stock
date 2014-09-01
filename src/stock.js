@@ -44,6 +44,11 @@ Theme.rangeSelector = {
     zoom: null
 };
 
+/**
+ * @class Stock
+ * 大数据图形
+ */
+
 var Stock = function(cfg){
     this._attrs = Util.mix({},Stock.ATTRS,cfg);
     this.events = {};
@@ -53,7 +58,7 @@ Stock.ATTRS = {
 
     /**
      * 当前选择时间区域
-     * @type {Object}
+     * @type {Array}
      */
     zoom: null,
 
@@ -76,18 +81,21 @@ Stock.ATTRS = {
     rangeSelector: null,
 
     /**
+     * @private
      * chart所在dom对象
      * @type {Object}
      */
     chartHtml: null,
 
     /**
+     * @private
      * rangeSelector所在dom对象
      * @type {Object}
      */
     rangeSelectorHtml: null,
 
     /**
+     * @private
      * 选择区域左右边界
      * @type {Number}
      */
@@ -109,6 +117,7 @@ Util.augment(Stock,{
         }
         _self.paint();
     },
+    //入口函数
     paint: function(){
         var _self = this;
 
@@ -128,7 +137,10 @@ Util.augment(Stock,{
         //渲染chart
         _self._fixChartSeriesAndRender();
     },
-    //数据修改
+    /**
+     * 修改数据
+     * @param  {Array}  新的数据源
+     */
     changeData: function(data){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
@@ -431,12 +443,17 @@ Util.augment(Stock,{
 
         return path;
     },
-    //设置时间区域
+    /**
+     * 设置选中的时间区间
+     * @param  {Number}  时间的毫秒数
+     * @param  {Number}  时间的毫秒数
+     */
     setZoom: function(startTime,endTime){
         var _self = this;
         _self._setZoom(startTime,endTime);
         _self.setNavigatorByTime(startTime,endTime)
     },
+    //根据时间选中选择区域
     _setZoom: function(startTime,endTime){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
@@ -493,6 +510,7 @@ Util.augment(Stock,{
         //回调事件
         zoomChange && zoomChange(startTime,endTime);
     },
+    //根据时间重新设置navigator
     setNavigatorByTime: function(startTime,endTime){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
@@ -521,6 +539,7 @@ Util.augment(Stock,{
         _self._getHandleByArea();
         _self._changeBottomPath();
     },
+    //根据选中时间选择区间
     getTimesByNavigator: function(){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
@@ -536,9 +555,8 @@ Util.augment(Stock,{
             endValue_x = xAxis.getValue(endValue);
 
         _self._setZoom((startValue_x),(endValue_x),true);
-
-
     },
+    //绑定事件
     dragEvents: function(){
         var _self = this,
             margin = _self.get('margin'),
