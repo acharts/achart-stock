@@ -1,4 +1,4 @@
-var Chart = require('acharts')//window.AChart,
+var Chart = require('acharts'),//window.AChart,
     Util = Chart.Util,
     Theme = Chart.Theme;
 
@@ -37,8 +37,7 @@ Theme.rangeSelector = {
             }
         }
     },
-
-    sync: false,
+    autoRefresh: true,
     zoomChange: null,
 
     zoom: null
@@ -127,13 +126,8 @@ Util.augment(Stock,{
         _self._initRangeSelector();
         //初始化chart
         _self._initChart();
-
         //修正rangeSelector的series
         _self._fixRangeSelectorSeries();
-        /*//添加滑动条
-        _self._addAreaSelectShapes();
-        //添加事件
-        _self.dragEvents();*/
         //渲染chart
         _self._fixChartSeriesAndRender();
     },
@@ -277,22 +271,17 @@ Util.augment(Stock,{
 
         rangeSelector.render();
     },
-    //添加滑动条等
-    _addAreaSelectShapes: function(){
+    //添加滚动条
+    _renderScrollGroup: function(){
         var _self = this,
             margin  = _self.get('margin'),
+            scrollGroup = _self.get('scrollGroup'),
             rangeSelector = _self.get('rangeSelector'),
-            canvas = rangeSelector.get('canvas'),
             width = rangeSelector.get('width'),
             height = rangeSelector.get('height');
 
-        //静默图形
-        var static_group = canvas.addGroup();
-        //可操作图形
-        var navigator = canvas.addGroup();
-
         //下面滑动条
-        scrollBar = navigator.addShape({
+        var scrollBar = scrollGroup.addShape({
             type: 'rect',
             id: 'scrollBar',
             attrs: {
@@ -308,56 +297,65 @@ Util.augment(Stock,{
         _self.set('scrollBar',scrollBar);
 
         //上面线
-        static_group.addShape('path',{
+        scrollGroup.addShape('path',{
             path: 'M' + (margin - 15) + ',0L' + (width - margin + 15) + ',0',
             stroke: "#aaaaaa",
             'stroke-width': 2
         });
 
         //滑动条的两个button
-        static_group.addShape('rect',{
-            x : margin - 15,
-            y : 39,
-            width : 15,
-            height : 15,
-            stroke: "#bbbbbb",
-            fill: '#ebe7e8'
-        });
-
         var path = 'M' + (margin - 15 + 8) + ',45L' + (margin - 15 + 6) + ',47'
-                  +'L' + (margin - 15 + 8) + ',49'
-                  +'L' + (margin - 15 + 8) + ',45z';
+            +'L' + (margin - 15 + 8) + ',49'
+            +'L' + (margin - 15 + 8) + ',45z';
 
-        static_group.addShape('path',{
+        scrollGroup.addShape('path',{
             path: path,
-            stroke: "#666666",
-            fill: '#666666'
+            stroke: "#000",
+            fill: '#000'
         });
 
-        static_group.addShape('rect',{
-            x : width - margin,
-            y : 39,
-            width : 15,
-            height : 15,
-            stroke: "#bbbbbb",
-            fill: '#ebe7e8'
+        var scroll_left = scrollGroup.addShape({
+            type: 'rect',
+            attrs: {
+                x: margin - 15,
+                y: 39,
+                width: 15,
+                height: 15,
+                stroke: "#bbbbbb",
+                fill: '#ebe7e8',
+                'fill-opacity': 0.6
+            }
         });
+        _self.set('navigator_scroll_left',scroll_left);
 
         var path = 'M' + (width - margin + 7) + ',45L' + (width - margin + 9) + ',47'
             +'L' + (width - margin + 7) + ',49'
             +'L' + (width - margin + 7) + ',45z';
 
-        static_group.addShape('path',{
+        scrollGroup.addShape('path',{
             path: path,
-            stroke: "#666666",
-            fill: '#666666'
+            stroke: "#000",
+            fill: '#000'
         });
+
+
+        var scroll_right = scrollGroup.addShape('rect',{
+            x : width - margin,
+            y : 39,
+            width : 15,
+            height : 15,
+            stroke: "#bbbbbb",
+            fill: '#ebe7e8',
+            'fill-opacity':0.6
+        });
+        _self.set('navigator_scroll_right',scroll_right);
+
 
         var path = 'M' + (width/2 - 3) + ',44L' + (width/2 - 3) + ',49'
             +'M' + (width/2) + ',44L' + (width/2) + ',49'
             +'M' + (width/2 + 3) + ',44L' + (width/2 + 3) + ',49';
 
-        var navigator_bottom_path = navigator.addShape({
+        var navigator_bottom_path = scrollGroup.addShape({
             id: 'navigator_bottom_path',
             type: 'path',
             attrs: {
@@ -367,8 +365,17 @@ Util.augment(Stock,{
         });
 
         _self.set('navigator_bottom_path',navigator_bottom_path);
+    },
+    //添加选择区域
+    _renderNavigatorGroup: function(){
+        var _self = this,
+            margin  = _self.get('margin'),
+            navigatorGroup = _self.get('navigatorGroup'),
+            rangeSelector = _self.get('rangeSelector'),
+            width = rangeSelector.get('width'),
+            height = rangeSelector.get('height');
 
-        var navigator_select_area = navigator.addShape({
+        var navigator_select_area = navigatorGroup.addShape({
             type: 'rect',
             id: 'navigator_select_area',
             attrs: {
@@ -384,7 +391,7 @@ Util.augment(Stock,{
 
         _self.set('navigator_select_area',navigator_select_area);
 
-        var navigator_handle_left_path = navigator.addShape({
+        var navigator_handle_left_path = navigatorGroup.addShape({
             id: 'navigator_handle_left_path',
             type: 'path',
             attrs: {
@@ -395,7 +402,7 @@ Util.augment(Stock,{
 
         _self.set('navigator_handle_left_path',navigator_handle_left_path);
 
-        var navigator_handle_left = navigator.addShape({
+        var navigator_handle_left = navigatorGroup.addShape({
             type: 'rect',
             id: 'navigator_handle_left',
             attrs: {
@@ -411,7 +418,7 @@ Util.augment(Stock,{
 
         _self.set('navigator_handle_left',navigator_handle_left);
 
-        var navigator_handle_right_path = navigator.addShape({
+        var navigator_handle_right_path = navigatorGroup.addShape({
             id: 'navigator_handle_right_path',
             type: 'path',
             attrs: {
@@ -421,7 +428,7 @@ Util.augment(Stock,{
         });
         _self.set('navigator_handle_right_path',navigator_handle_right_path);
 
-        var navigator_handle_right = navigator.addShape({
+        var navigator_handle_right = navigatorGroup.addShape({
             type: 'rect',
             id: 'navigator_handle_right',
             attrs: {
@@ -436,6 +443,26 @@ Util.augment(Stock,{
         });
 
         _self.set('navigator_handle_right',navigator_handle_right);
+    },
+    //添加图形
+    _addAreaSelectShapes: function(){
+        var _self = this,
+            margin  = _self.get('margin'),
+            rangeSelector = _self.get('rangeSelector'),
+            canvas = rangeSelector.get('canvas'),
+            width = rangeSelector.get('width'),
+            height = rangeSelector.get('height');
+
+        //滚动条group
+        var scrollGroup = canvas.addGroup();
+        _self.set('scrollGroup',scrollGroup);
+        //选择区域group
+        var navigatorGroup = canvas.addGroup();
+        _self.set('navigatorGroup',navigatorGroup);
+
+        _self._renderScrollGroup();
+        _self._renderNavigatorGroup();
+
     },
     _getHandlePath: function(x){
         var path = 'M' + (4 + x) + ',16L' + (4 + x ) + ',23'
@@ -457,15 +484,15 @@ Util.augment(Stock,{
     _setZoom: function(startTime,endTime){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
-        //是否异步
-            sync = rangeSelector.get('sync'),
-        //callback
+            //是否自动刷新数据
+            autoRefresh = rangeSelector.get('autoRefresh'),
+            //callback
             zoomChange = rangeSelector.get('zoomChange'),
             series = _self.get('originData'),
             chart =_self.get('chart'),
             chartSeries = chart.getSeries();
 
-        if(!sync){
+        if(autoRefresh){
             Util.each(series,function(item, index){
                 var data = item.data,
                     targetSeries = chartSeries[index],
@@ -561,6 +588,8 @@ Util.augment(Stock,{
         var _self = this,
             margin = _self.get('margin'),
             rangeSelector = _self.get('rangeSelector'),
+            //是否自动刷新数据
+            autoRefresh = rangeSelector.get('autoRefresh'),
             width = rangeSelector.get('width'),
             canvas = rangeSelector.get('canvas'),
             navigator_select_area = _self.get('navigator_select_area'),
@@ -569,6 +598,8 @@ Util.augment(Stock,{
             navigator_handle_right = _self.get('navigator_handle_right'),
             navigator_handle_right_path = _self.get('navigator_handle_right_path'),
             navigator_bottom_path = _self.get('navigator_bottom_path'),
+            navigator_scroll_left = _self.get('navigator_scroll_left'),
+            navigator_scroll_right = _self.get('navigator_scroll_right'),
             scrollBar = _self.get('scrollBar'),
             xAxis = rangeSelector.get('xAxis'),
             yAxis = rangeSelector.get('yAxis');
@@ -583,11 +614,15 @@ Util.augment(Stock,{
             _self._getHandleByArea();
             _self._changeBottomPath();
 
-            _self.getTimesByNavigator();
+            if(autoRefresh){
+                _self.getTimesByNavigator();
+            }
         },function(){
             xAreaBefore = navigator_select_area.attr('x');
         },function(){
-
+            if(!autoRefresh){
+                _self.getTimesByNavigator();
+            }
         })
 
         //区域点击事件
@@ -608,6 +643,33 @@ Util.augment(Stock,{
                     _self.getTimesByNavigator();
                 }
             }
+        })
+
+        //滚动条左右按钮点击事件
+        navigator_scroll_left.on('click',function(ev){
+            var eachTick = width/20,
+                areaX = navigator_select_area.attr('x');
+
+            var offsetX = areaX - eachTick;
+
+            _self._getAreaByX(offsetX);
+            _self._getHandleByArea();
+            _self._changeBottomPath();
+
+            _self.getTimesByNavigator();
+        })
+
+        navigator_scroll_right.on('click',function(ev){
+            var eachTick = width/20,
+                areaX = navigator_select_area.attr('x');
+
+            var offsetX = areaX + eachTick;
+
+            _self._getAreaByX(offsetX);
+            _self._getHandleByArea();
+            _self._changeBottomPath();
+
+            _self.getTimesByNavigator();
         })
 
         //滚动条点击事件
@@ -649,8 +711,9 @@ Util.augment(Stock,{
             navigator_select_area.attr('width',widthAreaBefore - dx);
 
             _self._changeBottomPath();
-
-            _self.getTimesByNavigator();
+            if(autoRefresh) {
+                _self.getTimesByNavigator();
+            }
         },function(x,y,event){
             xHandleBefore = navigator_handle_left.attr('x');
 
@@ -658,7 +721,9 @@ Util.augment(Stock,{
             widthAreaBefore = navigator_select_area.attr('width');
 
         },function(event){
-
+            if(!autoRefresh){
+                _self.getTimesByNavigator();
+            }
         })
 
         //右侧按钮拖拽事件
@@ -682,15 +747,18 @@ Util.augment(Stock,{
 
             navigator_select_area.attr('width',widthAreaBefore + dx);
             _self._changeBottomPath();
-
-            _self.getTimesByNavigator();
+            if(autoRefresh) {
+                _self.getTimesByNavigator();
+            }
         },function(){
             xHandleBefore = navigator_handle_right.attr('x');
 
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
         },function(){
-
+            if(!autoRefresh){
+                _self.getTimesByNavigator();
+            }
         })
     },
     //下侧button定位
