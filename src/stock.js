@@ -132,6 +132,12 @@ Util.augment(Stock,{
         _self._fixChartSeriesAndRender();
     },
     /**
+     * 获取图表的series
+     */
+    getSeries: function(){
+      return this.get('originData');
+    },
+    /**
      * 修改数据
      * @param  {Array} data 新的数据源
      */
@@ -196,7 +202,7 @@ Util.augment(Stock,{
 
         _self.set('rangeSelector',rangeSelector);
     },
-    //初始化cchart
+    //初始化chart
     _initChart: function(){
         var _self = this,
             margin = _self.get('margin'),
