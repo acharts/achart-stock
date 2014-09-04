@@ -37,6 +37,7 @@ Theme.rangeSelector = {
             }
         }
     },
+    dragRefresh:true,
     autoRefresh: true,
     zoomChange: null,
 
@@ -594,8 +595,8 @@ Util.augment(Stock,{
         var _self = this,
             margin = _self.get('margin'),
             rangeSelector = _self.get('rangeSelector'),
-            //是否自动刷新数据
-            autoRefresh = rangeSelector.get('autoRefresh'),
+            //是否拖动刷新数据
+            dragRefresh = rangeSelector.get('dragRefresh'),
             width = rangeSelector.get('width'),
             canvas = rangeSelector.get('canvas'),
             navigator_select_area = _self.get('navigator_select_area'),
@@ -620,13 +621,13 @@ Util.augment(Stock,{
             _self._getHandleByArea();
             _self._changeBottomPath();
 
-            if(autoRefresh){
+            if(dragRefresh){
                 _self.getTimesByNavigator();
             }
         },function(){
             xAreaBefore = navigator_select_area.attr('x');
         },function(){
-            if(!autoRefresh){
+            if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
         })
@@ -717,7 +718,7 @@ Util.augment(Stock,{
             navigator_select_area.attr('width',widthAreaBefore - dx);
 
             _self._changeBottomPath();
-            if(autoRefresh) {
+            if(dragRefresh) {
                 _self.getTimesByNavigator();
             }
         },function(x,y,event){
@@ -727,7 +728,7 @@ Util.augment(Stock,{
             widthAreaBefore = navigator_select_area.attr('width');
 
         },function(event){
-            if(!autoRefresh){
+            if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
         })
@@ -753,7 +754,7 @@ Util.augment(Stock,{
 
             navigator_select_area.attr('width',widthAreaBefore + dx);
             _self._changeBottomPath();
-            if(autoRefresh) {
+            if(dragRefresh) {
                 _self.getTimesByNavigator();
             }
         },function(){
@@ -762,7 +763,7 @@ Util.augment(Stock,{
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
         },function(){
-            if(!autoRefresh){
+            if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
         })
