@@ -644,7 +644,7 @@ Util.augment(Stock,{
             }
         },function(){
             xAreaBefore = navigator_select_area.attr('x');
-            navigator_select_area.attr('cursor','move');
+            navigator_select_area.attr('cursor','ew-resize');
         },function(){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
@@ -746,7 +746,7 @@ Util.augment(Stock,{
 
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
-            navigator_handle_left.attr('cursor','move');
+            navigator_handle_left.attr('cursor','ew-resize');
         },function(event){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
@@ -783,7 +783,7 @@ Util.augment(Stock,{
 
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
-            navigator_handle_right.attr('cursor','move');
+            navigator_handle_right.attr('cursor','ew-resize');
         },function(){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
