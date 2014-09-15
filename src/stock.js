@@ -644,10 +644,12 @@ Util.augment(Stock,{
             }
         },function(){
             xAreaBefore = navigator_select_area.attr('x');
+            navigator_select_area.attr('cursor','move');
         },function(){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
+            navigator_select_area.attr('cursor','default');
         })
 
         //区域点击事件
@@ -744,11 +746,12 @@ Util.augment(Stock,{
 
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
-
+            navigator_handle_left.attr('cursor','move');
         },function(event){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
+            navigator_handle_left.attr('cursor','default');
         })
 
         //右侧按钮拖拽事件
@@ -780,10 +783,12 @@ Util.augment(Stock,{
 
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
+            navigator_handle_right.attr('cursor','move');
         },function(){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
+            navigator_handle_right.attr('cursor','default');
         })
     },
     //下侧button定位
