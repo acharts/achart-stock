@@ -2134,7 +2134,19 @@ var stock1 = new AStock({
         lineActived : {
             'stroke-width' : 1
         },
-        data: data2
+        data: data2,
+        id: 's1'
+    },{
+        onSeries: 's1',
+        type: 'flag',
+        name: 'flag',
+        animate: false,
+        data:[{
+            x: 1136073600000+ 86400000 * 530,
+            flag:{
+                text: '111'
+            }
+        }]
     }]
 });
 

@@ -124,7 +124,7 @@ Util.augment(Stock,{
         //初始化container
         _self._initContainer();
         //初始化rangeSelector
-        _self._initRangeSelector();
+         _self._initRangeSelector();
         //初始化chart
         _self._initChart();
         //修正rangeSelector的series
@@ -245,7 +245,25 @@ Util.augment(Stock,{
             newSeries = [];
 
         //数据缓存
-        Object.prototype.clone = function() {
+        function cloneObject(object){
+            var o = {};
+            for (var i in object) {
+                o[i] = object[i];
+            }
+            return o;
+        }
+        function cloneArray(array){
+            var arr = [];
+            for (var i = 0; i < array.length; i++){
+                if (typeof array[i] !== 'object') {
+                    arr.push(array[i]);
+                } else {
+                    arr.push(cloneObject(array[i]));
+                }
+            }
+            return arr;
+        }
+        /*Object.prototype.clone = function() {
             var o = {};
             for (var i in this) {
                 o[i] = this[i];
@@ -261,8 +279,8 @@ Util.augment(Stock,{
                     arr.push(this[i].clone());
                 }
             return arr;
-        };
-        var originData = series.clone();
+        };*/
+        var originData = cloneArray(series);//.clone();
         _self.set('originData',originData);
 
         if(series.length > 0){
