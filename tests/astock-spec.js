@@ -1,8 +1,11 @@
 var expect = require('expect.js');
 var Chart = require('acharts');
 var $ = require('jquery');
+var sinon = require('sinon');
 var simulate = require('event-simulate');
 var AStock = require('../astock');
+
+require('./dragSimulate');
 
 var content = $('<div id="canvas"></div>').prependTo('body');
 var content1 = $('<div id="canvas1"></div>').prependTo('body');
@@ -2032,17 +2035,15 @@ var stock = new AStock({
                 markers: null,
                 animate: false,
                 area: {
-                    fill : 'rgb(245,247,250)',
+                    fill : '#3388cc',
                     stroke : '#6755ea',
-                    'stroke-width': 1
+                    'stroke-width': 0
                 }
             }
         },
         //autoRefresh: false,
-        zoom: [1136073600000+ 86400000 * 130,1136073600000+ 86400000 * 170],
-        zoomChange: function(startTime,endTime){
-            console.log('开始时间: ' + startTime + ';结束事件: ' + endTime );
-        }
+        zoom: [1136073600000+ 86400000 * 130,1136073600000+ 86400000 * 170]
+
     },
     tooltip : {
         valueSuffix : '￥'
@@ -2109,18 +2110,10 @@ var stock1 = new AStock({
         }
     },
     rangeSelectorOption: {
-        seriesOptions:{
-            areaCfg : {
-                markers: null,
-                animate: false,
-                area: {
-                    fill : 'rgb(245,247,250)',
-                    stroke : '#6755ea',
-                    'stroke-width': 1
-                }
-            }
-        },
-        zoom: [1136073600000+ 86400000 * 130,1136073600000+ 86400000 * 170]
+        zoom: [1136073600000+ 86400000 * 130,1136073600000+ 86400000 * 170],
+        zoomChange: function(startTime,endTime){
+            console.log('开始时间: ' + startTime + ';结束事件: ' + endTime );
+        }
     },
     tooltip : {
         valueSuffix : '￥'
@@ -2223,7 +2216,25 @@ describe('鼠标操作', function() {
         simulate.simulate(stock1.get('navigator_scroll_right').get('node'), 'click');
         simulate.simulate(stock1.get('scrollBar').get('node'), 'click');
     });
-    it('拖动',function() {
-        //暂无模拟
+    it('拖动左边按钮',function(done) {
+        var navigator_handle_left = stock1.get('navigator_handle_left').get('node');
+        $(navigator_handle_left).simulate("drag-n-drop", {dx: 100, interpolation: {stepWidth: 30, stepDelay: 1},callback: function(){
+            done();
+        }} );
+    })
+
+    it('拖动右边按钮',function(done) {
+        var navigator_handle_right = stock1.get('navigator_handle_right').get('node');
+
+        $(navigator_handle_right).simulate("drag-n-drop", {dx: -300, interpolation: {stepWidth: 30, stepDelay: 1},callback: function(){
+            done();
+        }});
+    })
+
+    it('拖动选择区域',function(done) {
+        var navigator_select_area = stock1.get('navigator_select_area').get('node');
+        $(navigator_select_area).simulate("drag-n-drop", {dx: 200, interpolation: {stepWidth: 30, stepDelay: 1},callback: function(){
+            done();
+        }});
     })
 });
