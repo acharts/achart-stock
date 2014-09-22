@@ -6,12 +6,8 @@ Theme.rangeSelector = {
     tooltip: null,
     legend: null,
     animate: false,
-    title : {
-        text : ''
-    },
-    subTitle : {
-        text : ''
-    },
+    title : null,
+    subTitle : null,
     yAxis : {
         grid: null,
         labels: null,
@@ -196,7 +192,7 @@ Util.augment(Stock,{
             width: width,
             height: 55,
             plotCfg : {
-                margin : [5,margin,15,margin] //画板的边距
+                margin : [5,margin,17,margin] //画板的边距
             }
         });
         var rangeSelector = new Chart(options);
@@ -263,23 +259,6 @@ Util.augment(Stock,{
             }
             return arr;
         }
-        /*Object.prototype.clone = function() {
-            var o = {};
-            for (var i in this) {
-                o[i] = this[i];
-            }
-            return o;
-        };
-        Array.prototype.clone = function() {
-            var arr = [];
-            for (var i = 0; i < this.length; i++)
-                if (typeof this[i] !== 'object') {
-                    arr.push(this[i]);
-                } else {
-                    arr.push(this[i].clone());
-                }
-            return arr;
-        };*/
         var originData = cloneArray(series);//.clone();
         _self.set('originData',originData);
 
@@ -311,7 +290,7 @@ Util.augment(Stock,{
             id: 'scrollBar',
             attrs: {
                 x: margin,
-                y: 39,
+                y: 38,
                 width: width - (margin) * 2,
                 height: 15,
                 stroke: "",
@@ -329,9 +308,9 @@ Util.augment(Stock,{
         });
 
         //滑动条的两个button
-        var path = 'M' + (margin - 15 + 8) + ',45L' + (margin - 15 + 6) + ',47'
-            +'L' + (margin - 15 + 8) + ',49'
-            +'L' + (margin - 15 + 8) + ',45z';
+        var path = 'M' + (margin - 15 + 8) + ',44L' + (margin - 15 + 6) + ',46'
+            +'L' + (margin - 15 + 8) + ',48'
+            +'L' + (margin - 15 + 8) + ',44z';
 
         scrollGroup.addShape('path',{
             path: path,
@@ -343,7 +322,7 @@ Util.augment(Stock,{
             type: 'rect',
             attrs: {
                 x: margin - 15,
-                y: 39,
+                y: 38,
                 width: 15,
                 height: 15,
                 stroke: "#bbbbbb",
@@ -353,9 +332,9 @@ Util.augment(Stock,{
         });
         _self.set('navigator_scroll_left',scroll_left);
 
-        var path = 'M' + (width - margin + 7) + ',45L' + (width - margin + 9) + ',47'
-            +'L' + (width - margin + 7) + ',49'
-            +'L' + (width - margin + 7) + ',45z';
+        var path = 'M' + (width - margin + 7) + ',44L' + (width - margin + 9) + ',46'
+            +'L' + (width - margin + 7) + ',48'
+            +'L' + (width - margin + 7) + ',44z';
 
         scrollGroup.addShape('path',{
             path: path,
@@ -366,7 +345,7 @@ Util.augment(Stock,{
 
         var scroll_right = scrollGroup.addShape('rect',{
             x : width - margin,
-            y : 39,
+            y : 38,
             width : 15,
             height : 15,
             stroke: "#bbbbbb",
@@ -376,9 +355,9 @@ Util.augment(Stock,{
         _self.set('navigator_scroll_right',scroll_right);
 
 
-        var path = 'M' + (width/2 - 3) + ',44L' + (width/2 - 3) + ',49'
-            +'M' + (width/2) + ',44L' + (width/2) + ',49'
-            +'M' + (width/2 + 3) + ',44L' + (width/2 + 3) + ',49';
+        var path = 'M' + (width/2 - 3) + ',43L' + (width/2 - 3) + ',48'
+            +'M' + (width/2) + ',43L' + (width/2) + ',48'
+            +'M' + (width/2 + 3) + ',43L' + (width/2 + 3) + ',48';
 
         var navigator_bottom_path = scrollGroup.addShape({
             id: 'navigator_bottom_path',
@@ -407,7 +386,7 @@ Util.augment(Stock,{
                 x : margin,
                 y : 0,
                 width: width - margin * 2,
-                height: 54,
+                height: 53,
                 fill: '#8cafda',
                 stroke: "#bbbbbb",
                 'fill-opacity': 0.2
@@ -479,10 +458,14 @@ Util.augment(Stock,{
             height = rangeSelector.get('height');
 
         //滚动条group
-        var scrollGroup = canvas.addGroup();
+        var scrollGroup = canvas.addGroup({
+            zIndex: 6
+        });
         _self.set('scrollGroup',scrollGroup);
         //选择区域group
-        var navigatorGroup = canvas.addGroup();
+        var navigatorGroup = canvas.addGroup({
+            zIndex: 6
+        });
         _self.set('navigatorGroup',navigatorGroup);
 
         _self._renderScrollGroup();
@@ -534,7 +517,6 @@ Util.augment(Stock,{
                     var start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
                     targetSeries.set('pointStart',start);
                     targetSeries.changeData(newData);
-
                 }else{
                     var dataArr = [];
                     Util.each(data,function(model, i){
@@ -807,9 +789,9 @@ Util.augment(Stock,{
             return ;
         }
 
-        var path = 'M' + (width/2 - 3) + ',44L' + (width/2 - 3) + ',49'
-            +'M' + (width/2) + ',44L' + (width/2) + ',49'
-            +'M' + (width/2 + 3) + ',44L' + (width/2 + 3) + ',49';
+        var path = 'M' + (width/2 - 3) + ',43L' + (width/2 - 3) + ',48'
+            +'M' + (width/2) + ',43L' + (width/2) + ',48'
+            +'M' + (width/2 + 3) + ',43L' + (width/2 + 3) + ',48';
 
         navigator_bottom_path.attr('path',path);
     },
@@ -830,7 +812,7 @@ Util.augment(Stock,{
         navigator_handle_left_path.attr('path',_self._getHandlePath(leftHandleX));
 
         var rightHandleX = leftHandleX + widthArea;
-        navigator_handle_right.attr('x',rightHandleX)
+        navigator_handle_right.attr('x',rightHandleX);
         navigator_handle_right_path.attr('path',_self._getHandlePath(rightHandleX));
     },
     //根据x重新划分区域
@@ -839,7 +821,7 @@ Util.augment(Stock,{
             margin = _self.get('margin'),
             rangeSelector = _self.get('rangeSelector'),
             width = rangeSelector.get('width'),
-            navigator_select_area = _self.get('navigator_select_area')
+            navigator_select_area = _self.get('navigator_select_area');
 
         var widthArea = navigator_select_area.attr('width');
         //左边边界
