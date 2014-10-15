@@ -1,6 +1,9 @@
 var Chart = require('acharts'),//window.AChart,
     Util = Chart.Util,
+    Tooltip = Chart.Tooltip,
     Theme = Chart.Theme;
+
+Chart.Series.Candlestick = require('./candlestick');
 
 Theme.rangeSelector = {
     tooltip: null,
@@ -11,14 +14,11 @@ Theme.rangeSelector = {
     yAxis : {
         grid: null,
         labels: null,
-        title : {
-            text : '',
-            rotate : -90
-        }
+        title : null
     },
     xAxis : {
         type : 'time',
-        grid: null,
+        grid : null,
         labels : null,
         autoAppend : 0
     },
@@ -27,18 +27,44 @@ Theme.rangeSelector = {
             markers: null,
             animate: false,
             area: {
-             fill : 'rgb(245,247,250)',
-             stroke : '#cccccc',
+             'fill-opacity': 0.5,
+             fill : '#efefef',
+             stroke : '#ddd',
              'stroke-width': 1
             }
         }
     },
+    dragDelay: 100,
+    plots: null,
     dragRefresh:true,
     autoRefresh: true,
     zoomChange: null,
-
+    sampling: {
+        enable: false,
+        max: 100
+    },
     zoom: null
 };
+
+//数据缓存
+function cloneObject(object){
+    var o = {};
+    for (var i in object) {
+        o[i] = object[i];
+    }
+    return o;
+}
+function cloneArray(array){
+    var arr = [];
+    for (var i = 0; i < array.length; i++){
+        if (typeof array[i] !== 'object') {
+            arr.push(array[i]);
+        } else {
+            arr.push(cloneObject(array[i]));
+        }
+    }
+    return arr;
+}
 
 /**
  * @class Stock
@@ -127,6 +153,9 @@ Util.augment(Stock,{
         _self._fixRangeSelectorSeries();
         //渲染chart
         _self._fixChartSeriesAndRender();
+
+        //渲染tooltip
+        _self._renderTooltip();
     },
     /**
      * 获取图表的series
@@ -175,6 +204,16 @@ Util.augment(Stock,{
 
         _self.set('chartHtmlId',chartId);
         _self.set('rangeSelectorHtmlId',rangeSelectorId);
+
+
+        //多个plot
+        var plots = _self.get('rangeSelectorOption').plots;
+        if(plots && plots.length > 0){
+            for(var i = 0;i < plots.length;i ++){
+                var html =  Util.createDom('<div id="'+ chartId +'-'+ i +'"></div>');
+                chartHtml.appendChild(html);
+            }
+        }
     },
     //初始化rangeSelector
     _initRangeSelector: function(){
@@ -184,7 +223,8 @@ Util.augment(Stock,{
             rangeSelectorId = _self.get('rangeSelectorHtmlId'),
             width = _self.get('width') || Util.getWidth(rangeSelectorHtml);
 
-        var options = Util.mix({},Theme.rangeSelector,_self.get('rangeSelectorOption'));
+        var options = Util.mix({},Theme.rangeSelector,_self.get('rangeSelectorOption')),
+
 
         options = Util.mix({},options,{
             id: rangeSelectorId,
@@ -195,6 +235,12 @@ Util.augment(Stock,{
                 margin : [5,margin,17,margin] //画板的边距
             }
         });
+
+        //x轴类型特殊处理
+        if(_self.get('xAxis') && _self.get('xAxis').type){
+            options.xAxis.type = _self.get('xAxis').type;
+        }
+
         var rangeSelector = new Chart(options);
 
         _self.set('rangeSelector',rangeSelector);
@@ -208,27 +254,58 @@ Util.augment(Stock,{
             width = _self.get('width') || Util.getWidth(chartHtml),
             height = _self.get('height') || Util.getHeight(chartHtml);
 
-        var chart = new Chart(Util.mix({},_self._attrs,{
-            id: chartId,
-            width: width,
-            height: height - 70
-        }))
+        //多个plot
+        var plots = _self.get('rangeSelectorOption').plots;
+        if(plots && plots.length > 0){
+            var charts = [];
+            for(var i = 0;i < plots.length;i ++){
+                var plot = plots[i];
+                var chart = new Chart(Util.mix({},_self._attrs,{
+                    id: chartId + '-' + i,
+                    width: width,
+                    height: plot.height,
+                    legend: null,
+                    tooltip: null
+                }));
+                charts.push(chart);
+            }
+            _self.set('chart',charts[0]);
+            _self.set('charts',charts);
+        }else{
+            var chart = new Chart(Util.mix({},_self._attrs,{
+                id: chartId,
+                width: width,
+                height: height - 70
+            }));
 
-        _self.set('chart',chart);
+            _self.set('chart',chart);
+            _self.set('charts',[chart]);
+        }
     },
     //修正series
     _fixChartSeriesAndRender: function(){
         var _self = this,
-            chart = _self.get('chart'),
+            charts = _self.get('charts'),
+            originData = _self.get('originData'),
             rangeSelector = _self.get('rangeSelector'),
-            chartSeries = chart.get('series'),
             zoom = rangeSelector.get('zoom') || _self.get('zoom');
 
-        Util.each(chartSeries,function(item,index){
-            item.data = [];
-        });
+        //render所有chart
+        Util.each(charts,function(chart,index){
+            var series = [];
+            Util.each(originData,function(item,order){
+                if(!item.plotIndex) item.plotIndex = 0;
 
-        chart.render();
+                if(item.plotIndex == index){
+                    series.push(cloneObject(item));
+                }
+            });
+            chart.set('series',series);
+            Util.each(series,function(item,index){
+                item.data = [];
+            });
+            chart.render();
+        });
 
         !zoom ? _self.setZoom() : _self.setZoom(zoom[0],zoom[1]);
     },
@@ -240,25 +317,6 @@ Util.augment(Stock,{
         var series = chart.get('series'),
             newSeries = [];
 
-        //数据缓存
-        function cloneObject(object){
-            var o = {};
-            for (var i in object) {
-                o[i] = object[i];
-            }
-            return o;
-        }
-        function cloneArray(array){
-            var arr = [];
-            for (var i = 0; i < array.length; i++){
-                if (typeof array[i] !== 'object') {
-                    arr.push(array[i]);
-                } else {
-                    arr.push(cloneObject(array[i]));
-                }
-            }
-            return arr;
-        }
         var originData = cloneArray(series);//.clone();
         _self.set('originData',originData);
 
@@ -274,6 +332,141 @@ Util.augment(Stock,{
         rangeSelector.set('series',newSeries);
 
         rangeSelector.render();
+    },
+    //对于多个chart stock上面渲染一个tooltip
+    _renderTooltip: function(){
+        var _self = this,
+            charts = _self.get('charts'),
+            chart = charts[0];
+
+        //Util.each(charts,function(chart,index){
+        //多个plot
+        var plots = _self.get('rangeSelectorOption').plots;
+        if(plots && plots.length > 0) {
+            var canvas = chart.get('canvas'),
+                plotRange = chart.get('plotRange'),
+                cfg = Util.mix({}, _self._attrs.tooltip || {}, {
+                    title: {
+                        y: 12,
+                        x: 8
+                    },
+                    offset: 10,
+                    animate: false,
+                    plotRange: plotRange,
+                    crosshairs: false,
+                    visible: false
+                });
+
+            //绘制crosshairs
+            if(_self.get('tooltip') && _self.get('tooltip').crosshairs){
+                var crosshairsGroup = [];
+                Util.each(charts,function(chart,index){
+                    var canvas = chart.get('canvas'),
+                        stroke = "#C0C0C0",
+                        plotRange = chart.get('plotRange');
+
+                    var y1,
+                        y2;
+                    if(plotRange){
+                        y1 = plotRange.bl.y;
+                        y2 = plotRange.tl.y;
+                    }else{
+                        y1 = canvas.get('height');
+                        y2 = 0;
+                    }
+                    var shape = canvas.addShape({
+                        type : 'line',
+                        visible : false,
+                        zIndex : 3,
+                        attrs : {
+                            stroke : stroke,
+                            x1 : 0,
+                            y1 : y1,
+                            x2 : 0,
+                            y2 : y2
+                        }
+                    });
+                    crosshairsGroup.push(shape);
+                });
+
+                _self.set('crosshairsGroup',crosshairsGroup)
+            }
+
+            var tooltip = canvas.addGroup(Tooltip, cfg);
+
+            Util.each(charts,function(chart,index) {
+                chart.on('plotover', function (ev) {
+                    var crosshairsGroup = _self.get('crosshairsGroup');
+                    tooltip.show()
+                    if (crosshairsGroup) {
+                        Util.each(crosshairsGroup, function (item, index) {
+                            item.show();
+                        })
+                    }
+                });
+
+                chart.on('plotout', function (ev) {
+                    tooltip.hide();
+                    if (crosshairsGroup) {
+                        Util.each(crosshairsGroup, function (item, index) {
+                            item.hide();
+                        })
+                    }
+                });
+
+                chart.on('plotmove', function (ev) {
+                    tooltip.show()
+                    var point = {
+                        x: ev.x,
+                        y: ev.y
+                    }, crosshairsGroup = _self.get('crosshairsGroup');
+
+                    var tipInfo = _self._getTipInfo(point);
+
+                    tooltip.setTitle(tipInfo.title);
+                    tooltip.setItems(tipInfo.items);
+                    tooltip.setPosition(point.x, point.y);
+
+                    Util.each(crosshairsGroup, function (item, index) {
+                        item.attr({
+                            x1: ev.x,
+                            x2: ev.x
+                        });
+                        item.show();
+                    })
+                });
+            });
+        }
+        //})
+    },
+    //获取显示tooltip的内容
+    _getTipInfo: function(point){
+        var _self = this,
+            charts = _self.get('charts');
+
+        var sArray = [];
+        Util.each(charts,function(chart,index){
+            var chartSeries = chart.getSeries();
+            Util.each(chartSeries,function(series,order){
+                sArray.push(series);
+            });
+        });
+        var seriesGroup = charts[0].get('seriesGroup'),
+            series = sArray[0],
+            xAxis = series.get('xAxis'),
+            info = series.getTrackingInfo(point);
+
+        //防止报错
+        //seriesGroup.set('tipGroup',{get: function(){return null}});
+        //获取
+        var rst = seriesGroup._getTipInfo(sArray,point);
+
+        //特殊处理采样title
+        if(series.get('type') == 'candlestick' && info && info.xValue != info.arr[5] && series.get('isSimpling')){
+            var startTime = xAxis ? xAxis.formatPoint(info.arr[5]) : info.arr[5];
+            rst.title = startTime + ' ~ ' + rst.title;
+        }
+        return rst;
     },
     //添加滚动条
     _renderScrollGroup: function(){
@@ -496,46 +689,95 @@ Util.augment(Stock,{
             autoRefresh = rangeSelector.get('autoRefresh'),
             //callback
             zoomChange = rangeSelector.get('zoomChange'),
-            series = _self.get('originData'),
-            chart =_self.get('chart'),
-            chartSeries = chart.getSeries();
+            //sampling 是否采样
+            sampling = rangeSelector.get('sampling'),
+            originData = _self.get('originData'),
+            charts =_self.get('charts');
 
         if(autoRefresh){
-            Util.each(series,function(item, index){
-                var data = item.data,
-                    targetSeries = chartSeries[index],
-                    pointStart = item.pointStart,
-                    pointInterval = item.pointInterval;
+            Util.each(charts,function(chart,order){
+                var chartSeries = chart.getSeries();
 
-                //存在pointStart
-                if(pointStart && pointInterval){
-                    var startIndex = startTime ? parseInt((startTime - pointStart) / pointInterval , 10) : 0,
-                        endIndex = endTime ? Math.ceil((endTime - pointStart) / pointInterval) : data.length;
+                //获取当前chart的原始数据
+                var series = [];
+                Util.each(originData,function(item,index){
+                    if(!item.plotIndex) item.plotIndex = 0;
+                    if(item.plotIndex == order){
+                        series.push(item);
+                    }
+                });
 
-                    startIndex = startIndex < 0 ? 0 : startIndex;
-                    var newData = data.slice(startIndex,endIndex + 1);
-                    var start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
-                    targetSeries.set('pointStart',start);
+                Util.each(series,function(item, index){
+                    var data = _self.getPlotData(item),
+                        targetSeries = chartSeries[index],
+                        pointStart = item.pointStart,
+                        pointInterval = item.pointInterval,
+                        newData = [];
+                    //存在pointStart
+                    if(pointStart && pointInterval){
+                        var startIndex = startTime ? parseInt((startTime - pointStart) / pointInterval , 10) : 0,
+                            endIndex = endTime ? Math.ceil((endTime - pointStart) / pointInterval) : data.length;
+
+                        startIndex = startIndex < 0 ? 0 : startIndex;
+                        newData = data.slice(startIndex,endIndex + 1);
+                        var start = (startTime || pointStart);
+                        if(start != pointStart && start % pointInterval != 0){
+                            start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
+                        }
+                        targetSeries.set('pointStart',start);
+                    }else{
+                        Util.each(data,function(model, i){
+                            var dataTime = model[0];
+
+                            //如果是flag  特殊处理
+                            if(targetSeries.get('type') == 'flag'){
+                                dataTime = model.x
+                            }
+
+                            if( (!startTime || startTime <= dataTime) && (!endTime || endTime >= dataTime)){
+                                newData.push(model);
+                            }
+                        });
+
+                        //取样
+                        if(sampling && sampling.enable && newData.length > sampling.max){
+                            var samplingType = _self.getSamplingType(targetSeries);
+                            newData = _self._simplingData(newData,samplingType);
+                            targetSeries.set('isSimpling',true);
+                        }else{
+                            targetSeries.set('isSimpling',false);
+                        }
+
+                        //k线图 柱状图颜色变更
+                        if(targetSeries.get('onCandlestick')){
+                            var onCandlestick = targetSeries.get('onCandlestick'),
+                                candleData = charts[0].getSeries()[0].get('data');
+
+                            Util.each(candleData,function(item,index){
+                                var openPoint = item[1],
+                                    closePoint = item[4];
+
+                                var cfg = openPoint >= closePoint ? onCandlestick.fallCfg : onCandlestick.riseCfg;
+                                if(cfg){
+                                    var time = newData[index][0],
+                                        value = newData[index][1];
+                                    newData[index] = {
+                                        x: time,
+                                        y: value,
+                                        attrs: cfg
+                                    }
+                                }
+                            });
+                        }
+
+                    }
+                    //数据空的时候隐藏
+                    newData.length > 0 ? targetSeries.show() : targetSeries.hide();
+
                     targetSeries.changeData(newData);
-                }else{
-                    var dataArr = [];
-                    Util.each(data,function(model, i){
-                        var dataTime = model[0];
-
-                        //如果是flag  特殊处理
-                        if(targetSeries.get('type') == 'flag'){
-                            dataTime = model.x
-                        }
-
-                        if( (!startTime || startTime <= dataTime) && (!endTime || endTime >= dataTime)){
-                            dataArr.push(model);
-                        }
-                    });
-                    targetSeries.changeData(dataArr);
-                }
+                });
+                chart.repaint();
             });
-
-            chart.repaint();
         }
 
         _self.set('zoom',[startTime,endTime]);
@@ -543,6 +785,113 @@ Util.augment(Stock,{
 
         //回调事件
         zoomChange && zoomChange(startTime,endTime);
+    },
+    //获取data
+    getPlotData: function(item){
+        var _self = this,
+            originData = _self.get('originData');
+
+        var data = item.data;
+        if(item.dataIndex){
+            var dataIndex = item.dataIndex,
+                origin = originData[0].data;
+
+            if(origin){
+                data = [];
+                Util.each(origin,function(item,index){
+                    var arr = [];
+                    arr[0] = item[0];
+                    if(Util.isArray(dataIndex)){
+                        Util.each(dataIndex,function(array,order){
+                            arr[order + 1] = item[array];
+                        });
+                    }else{
+                        arr[1] = item[dataIndex];
+                    }
+                    data.push(arr);
+                });
+            }
+        }
+        return data;
+    },
+    //获取采样类型
+    getSamplingType: function(series){
+        var _self = this,
+            samplingType = series.get('samplingType'),
+            type = samplingType || series.get('type');
+
+        switch (type){
+            case "candlestick":
+                type = 'stock';
+                break;
+            case "column":
+                type = 'sum';
+                break;
+        }
+
+        return type;
+    },
+    //数据采样
+    _simplingData: function(data,type){
+        var _self = this,
+            rangeSelector = _self.get('rangeSelector'),
+            sampling = rangeSelector.get('sampling'),
+            length = data.length - 1,
+            avg = Math.ceil(length/sampling.max),
+            interval = parseInt(length/avg, 10),
+            finalLength = avg * interval,
+            returnData = [];
+
+        var startIndex = length == finalLength ? 0 :  length - finalLength;
+        //k线图的合并采样
+        for(var i = startIndex;i <= length - avg; i += avg){
+            var start = i + 1,
+                startData = cloneArray(data[start]),
+                endData = cloneArray(data[i + avg]);
+
+            if(type == 'sum'){
+                var conData = [
+                    endData[0],
+                    startData[1]
+                ];
+                for(var j = start + 1; j <= avg + i; j ++){
+                    var currData = data[j];
+                    //sum
+                    conData[1] += currData[1];
+                }
+                returnData.push(conData);
+            }else if(type == 'stock'){
+                var conData = [
+                    endData[0],
+                    startData[1],
+                    startData[2],
+                    startData[3],
+                    endData[4],
+                    startData[0]
+                ];
+                for(var j = start; j <= avg + i; j ++){
+                    var currData = data[j];
+                    //high
+                    conData[2] = Math.max(currData[2],conData[2]);
+                    //low
+                    conData[3] = Math.min(currData[3],conData[3]);
+                }
+                returnData.push(conData);
+            }else if(type == 'avg'){
+                var conData = [
+                    endData[0],
+                    startData[1]
+                ];
+                for(var j = start + 1; j <= avg + i; j ++){
+                    var currData = data[j];
+                    //avg
+                    conData[1] += currData[1];
+                }
+                returnData.push(conData);
+            }
+        }
+
+        return returnData.length == 0 ? data : returnData;
     },
     //根据时间重新设置navigator
     setNavigatorByTime: function(startTime,endTime){
@@ -607,11 +956,12 @@ Util.augment(Stock,{
             navigator_bottom_path = _self.get('navigator_bottom_path'),
             navigator_scroll_left = _self.get('navigator_scroll_left'),
             navigator_scroll_right = _self.get('navigator_scroll_right'),
+            dragDelay = rangeSelector.get('dragDelay'),
             scrollBar = _self.get('scrollBar'),
             xAxis = rangeSelector.get('xAxis'),
             yAxis = rangeSelector.get('yAxis');
 
-        var xHandleBefore,xAreaBefore,widthAreaBefore;
+        var xHandleBefore,xAreaBefore,widthAreaBefore,timeout;
 
         //区域拖拽事件
         navigator_select_area.drag(function(dx,dy,x,y,event){
@@ -622,20 +972,28 @@ Util.augment(Stock,{
             _self._changeBottomPath();
 
             if(dragRefresh){
-                _self.getTimesByNavigator();
+                if(timeout) clearTimeout(timeout);
+                timeout = setTimeout(function(){
+                    _self.getTimesByNavigator();
+                },dragDelay);
             }
         },function(){
             xAreaBefore = navigator_select_area.attr('x');
             navigator_select_area.attr('cursor','ew-resize');
+            _self.set('onDrag',true);
         },function(){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
             navigator_select_area.attr('cursor','default');
+            _self.set('onDrag',false);
         })
 
         //区域点击事件
         rangeSelector.on('plotclick',function(ev){
+            //拖拽中
+            if(_self.get('onDrag')) return;
+
             var areaX = navigator_select_area.attr('x'),
                 areaWidth = navigator_select_area.attr('width');
             if(ev.x < areaX || ev.x > areaX + areaWidth) {
@@ -720,8 +1078,11 @@ Util.augment(Stock,{
             navigator_select_area.attr('width',widthAreaBefore - dx);
 
             _self._changeBottomPath();
-            if(dragRefresh) {
-                _self.getTimesByNavigator();
+            if(dragRefresh){
+                if(timeout) clearTimeout(timeout);
+                timeout = setTimeout(function(){
+                    _self.getTimesByNavigator();
+                },dragDelay);
             }
         },function(x,y,event){
             xHandleBefore = navigator_handle_left.attr('x');
@@ -729,11 +1090,14 @@ Util.augment(Stock,{
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
             navigator_handle_left.attr('cursor','ew-resize');
+
+            _self.set('onDrag',true);
         },function(event){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
             navigator_handle_left.attr('cursor','default');
+            _self.set('onDrag',false);
         })
 
         //右侧按钮拖拽事件
@@ -757,8 +1121,11 @@ Util.augment(Stock,{
 
             navigator_select_area.attr('width',widthAreaBefore + dx);
             _self._changeBottomPath();
-            if(dragRefresh) {
-                _self.getTimesByNavigator();
+            if(dragRefresh){
+                if(timeout) clearTimeout(timeout);
+                timeout = setTimeout(function(){
+                    _self.getTimesByNavigator();
+                },dragDelay);
             }
         },function(){
             xHandleBefore = navigator_handle_right.attr('x');
@@ -766,11 +1133,15 @@ Util.augment(Stock,{
             xAreaBefore = navigator_select_area.attr('x');
             widthAreaBefore = navigator_select_area.attr('width');
             navigator_handle_right.attr('cursor','ew-resize');
+
+            _self.set('onDrag',true);
         },function(){
             if(!dragRefresh){
                 _self.getTimesByNavigator();
             }
             navigator_handle_right.attr('cursor','default');
+
+            _self.set('onDrag',false);
         })
     },
     //下侧button定位
