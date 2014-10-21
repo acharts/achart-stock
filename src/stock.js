@@ -88,7 +88,7 @@ Stock.ATTRS = {
      * 区域选择配置项
      * @type {Object}
      */
-    rangeSelectorOption: null,
+    rangeSelectorOption: {},
 
     /**
      * chart对象

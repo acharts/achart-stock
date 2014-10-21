@@ -2318,15 +2318,26 @@ var stock3 = new AStock({
         grid : {
             animate : false
         },
-        animate : false
+        animate : false,
+
+        labels :{
+            //x: - 120,
+            label : {
+                fill : '#333',
+                'text-anchor' : 'end',
+                x: -30
+            }
+        }
     },{
         position: 'left',
         grid : null,
         animate : false,
         labels :{
+            //x: - 120,
             label : {
                 fill : '#333',
-                'text-anchor' : 'end'
+                'text-anchor' : 'end',
+                x: -50
             }
         }
     },{
