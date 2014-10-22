@@ -912,8 +912,8 @@ Util.augment(Stock,{
             navigator_select_area = _self.get('navigator_select_area');
         }
 
-        var x = xAxis.getOffset(startTime) || (margin),
-            end_x = xAxis.getOffset(endTime) || (width - margin),
+        var x = startTime ? xAxis.getOffset(startTime) : (margin),
+            end_x = endTime ? xAxis.getOffset(endTime) : (width - margin),
             width = end_x - x;
 
         navigator_select_area.attr('width',width);
