@@ -43,7 +43,12 @@ Theme.rangeSelector = {
         enable: false,
         max: 100
     },
-    zoom: null
+    zoom: null,
+    selectAreaCfg: {
+        fill: '#717acb',
+        'fill-opacity': .4,
+        stroke: '#bbbbbb'
+    }
 };
 
 //数据缓存
@@ -570,20 +575,18 @@ Util.augment(Stock,{
             navigatorGroup = _self.get('navigatorGroup'),
             rangeSelector = _self.get('rangeSelector'),
             width = rangeSelector.get('width'),
+            selectAreaCfg = rangeSelector.get('selectAreaCfg'),
             height = rangeSelector.get('height');
 
         var navigator_select_area = navigatorGroup.addShape({
             type: 'rect',
             id: 'navigator_select_area',
-            attrs: {
+            attrs: Util.mix({},selectAreaCfg,{
                 x : margin,
                 y : 0,
                 width: width - margin * 2,
-                height: 53,
-                fill: '#8cafda',
-                stroke: "#bbbbbb",
-                'fill-opacity': 0.2
-            }
+                height: 53
+            })
         });
 
         _self.set('navigator_select_area',navigator_select_area);

@@ -4,12 +4,13 @@
  *
  * */
 
-var Cartesian = require('achart-series').Cartesian,
-    ActiveGroup = require('achart-actived').Group,
-    Flags = require('achart-flags'),
-    Candlesticks = require('achart-candlesticks'),
-    Util = require('achart-util');
-
+var AChart = require('acharts'),//window.AChart,
+    Cartesian = AChart.Series.Cartesian,
+    ActiveGroup = AChart.Actived.Group,
+    Flags = AChart.Flags,
+    Candlesticks = AChart.Candlesticks,
+    Util = AChart.Util;
+console.log(Flags,Candlesticks)
 /**
  * @class Chart.Series.Flag
  * 图列上面的标识
