@@ -37,6 +37,6 @@
     },
     "buildArgs": "--include standalone",
 
-    "tests": "tests/astock-spec.js"
+    "tests": "tests/*-spec.js"
   }
 }

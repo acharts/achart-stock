@@ -10,7 +10,6 @@ var AChart = require('acharts'),//window.AChart,
     Flags = AChart.Flags,
     Candlesticks = AChart.Candlesticks,
     Util = AChart.Util;
-console.log(Flags,Candlesticks)
 /**
  * @class Chart.Series.Flag
  * 图列上面的标识

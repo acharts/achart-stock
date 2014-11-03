@@ -34,16 +34,28 @@ Theme.rangeSelector = {
             }
         }
     },
+    //最小区间
+    minZoomInterval:false,
+    //是否实时数据
+    realtime: false,
+    //拖动时候的延迟
     dragDelay: 100,
+    //是否多屏展示
     plots: null,
+    //是否拖动中刷新数据
     dragRefresh:true,
+    //是否自动刷新数据
     autoRefresh: true,
+    //选择区域修改时候的回调函数
     zoomChange: null,
+    //是否采样数据
     sampling: {
         enable: false,
         max: 100
     },
+    //当前的选择的范围
     zoom: null,
+    //拖动条的配置项
     selectAreaCfg: {
         fill: '#717acb',
         'fill-opacity': .4,
@@ -175,16 +187,32 @@ Util.augment(Stock,{
     changeData: function(data){
         var _self = this,
             rangeSelector = _self.get('rangeSelector'),
+            realtime = rangeSelector.get('realtime'),
             zoom = rangeSelector.get('zoom') || _self.get('zoom'),
             originData = _self.get('originData');
 
+        //控制区域数据修改
         rangeSelector.changeData(data[0]);
 
         Util.each(originData,function(item,index){
             item.data = data[index];
         });
+        //实时数据
+        if(realtime){
+            var navigator_select_area = _self.get('navigator_select_area'),
+                currX = navigator_select_area.attr('x'),
+                currWidth = navigator_select_area.attr('width'),
+                width = rangeSelector.get('width'),
+                margin = _self.get('margin');
 
-        !zoom ? _self.setZoom() : _self.setZoom(zoom[0],zoom[1]);
+            if(currX + currWidth + margin == width){
+                _self.getTimesByNavigator();
+            }else{
+                !zoom ? _self.setZoom() : _self.setZoom(zoom[0],zoom[1]);
+            }
+        }else{
+            !zoom ? _self.setZoom() : _self.setZoom(zoom[0],zoom[1]);
+        }
     },
     //初始化dom
     _initContainer: function(){
@@ -461,8 +489,6 @@ Util.augment(Stock,{
             xAxis = series.get('xAxis'),
             info = series.getTrackingInfo(point);
 
-        //防止报错
-        //seriesGroup.set('tipGroup',{get: function(){return null}});
         //获取
         var rst = seriesGroup._getTipInfo(sArray,point);
 
@@ -945,10 +971,13 @@ Util.augment(Stock,{
     //绑定事件
     dragEvents: function(){
         var _self = this,
+            minInterval = 1,//左右按钮距离限制
             margin = _self.get('margin'),
             rangeSelector = _self.get('rangeSelector'),
             //是否拖动刷新数据
             dragRefresh = rangeSelector.get('dragRefresh'),
+            //可拖动的最小时间间距
+            minZoomInterval = rangeSelector.get('minZoomInterval'),
             width = rangeSelector.get('width'),
             canvas = rangeSelector.get('canvas'),
             navigator_select_area = _self.get('navigator_select_area'),
@@ -961,10 +990,18 @@ Util.augment(Stock,{
             navigator_scroll_right = _self.get('navigator_scroll_right'),
             dragDelay = rangeSelector.get('dragDelay'),
             scrollBar = _self.get('scrollBar'),
-            xAxis = rangeSelector.get('xAxis'),
-            yAxis = rangeSelector.get('yAxis');
+            xAxis = rangeSelector.get('seriesGroup').get('xAxis');
 
         var xHandleBefore,xAreaBefore,widthAreaBefore,timeout;
+
+
+        //有最小限制
+        if(minZoomInterval && minZoomInterval > 0){
+            var startTime = xAxis.getValue(margin),
+                endTime = startTime + minZoomInterval;
+
+            minInterval = xAxis.getOffset(endTime) - xAxis.getOffset(startTime);
+        }
 
         //区域拖拽事件
         navigator_select_area.drag(function(dx,dy,x,y,event){
@@ -1060,7 +1097,6 @@ Util.augment(Stock,{
         //左边按钮拖拽事件
         navigator_handle_left.drag(function(dx,dy,x,y,event){
             var currX = xHandleBefore + dx;
-
             //左边边界
             if(currX <= (margin - 5)){
                 currX = margin - 5;
@@ -1068,9 +1104,9 @@ Util.augment(Stock,{
             }
             //右边边界
             var rightLimit = navigator_handle_right.attr('x');
-            if(currX >= rightLimit - 5){
-                currX = rightLimit - 5;
-                dx = rightLimit - 5 - xHandleBefore;
+            if(currX >= rightLimit - minInterval){
+                currX = rightLimit - minInterval;
+                dx = rightLimit - minInterval - xHandleBefore;
             }
 
             navigator_handle_left.attr('x',currX);
@@ -1108,9 +1144,9 @@ Util.augment(Stock,{
             var currX = xHandleBefore + dx;
             //左边边界
             var leftLimit = navigator_handle_left.attr('x');
-            if(currX <= leftLimit + 5){
-                currX = leftLimit + 5;
-                dx = leftLimit + 5 - xHandleBefore;
+            if(currX <= leftLimit + minInterval){
+                currX = leftLimit + minInterval;
+                dx = leftLimit + minInterval - xHandleBefore;
             }
             //右边边界
             if(currX >= width - margin - 5){
