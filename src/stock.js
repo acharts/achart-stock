@@ -192,8 +192,14 @@ Util.augment(Stock,{
             originData = _self.get('originData');
 
         //控制区域数据修改
-        rangeSelector.changeData(data[0]);
-
+        //多个plot
+        var firstSeriesData = data[0];
+        if(Util.isArray(firstSeriesData[0])){
+            rangeSelector.changeData(data);
+        }else{
+            rangeSelector.changeData(data[0]);
+        }
+        
         Util.each(originData,function(item,index){
             item.data = data[index];
         });
@@ -237,7 +243,6 @@ Util.augment(Stock,{
 
         _self.set('chartHtmlId',chartId);
         _self.set('rangeSelectorHtmlId',rangeSelectorId);
-
 
         //多个plot
         var plots = _self.get('rangeSelectorOption').plots;
@@ -1243,6 +1248,17 @@ Util.augment(Stock,{
         }
 
         navigator_select_area.attr('x',currX);
+    },
+    //clear canvas
+    clear: function(){
+        var _self = this;
+        var charts = _self.get('charts');
+        var rangeSelector = _self.get('rangeSelector');
+
+        Util.each(charts,function(chart){
+            chart.clear();
+        });
+        rangeSelector.clear();
     }
 });
 

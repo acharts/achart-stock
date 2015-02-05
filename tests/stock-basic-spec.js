@@ -1988,3 +1988,12 @@ describe('鼠标操作', function() {
         }});
     })
 });
+
+describe('销毁', function() {
+    it('销毁',function(done){
+        setTimeout(function(){
+            stock1.clear();
+            done();
+        },1000);
+    });
+})
