@@ -29,8 +29,9 @@
       "expect.js": "0.3.1",
       "sinon" : "1.6.0",
       "event-simulate" : "1.0.0",
+      "achart-canvas": "~1.1.1",
       "jquery" : "1.9.1",
-      "acharts" : "1.0.5"
+      "acharts" : "1.0.12"
     },
     "engines": {
       "seajs": "2.2.1"

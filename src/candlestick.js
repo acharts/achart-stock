@@ -68,7 +68,6 @@ Candlestick.ATTRS = {
 };
 
 Util.extend(Candlestick,Cartesian);
-Util.mixin(Candlestick,[ActiveGroup]);
 
 Util.augment(Candlestick,{
     renderUI: function(){
