@@ -16,12 +16,12 @@
   "spm": {
     "main": "astock.js",
     "dependencies": {
-        "acharts" : "1.0.12",
-        "achart-util": "1.0.0",
-        "achart-actived" : "1.0.0",
-        "achart-series": "1.0.0",
-        "achart-candlesticks" : "1.0.0",
-        "achart-flags": "1.0.0"
+        "acharts" : "~1.0.18",
+        "achart-util": "~1.0.0",
+        "achart-actived" : "~1.0.0",
+        "achart-series": "~1.0.0",
+        "achart-candlesticks" : "~1.0.0",
+        "achart-flags": "~1.0.0"
     },
     "devDependencies": {
       "achart-axis" : "1.0.0",

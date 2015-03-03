@@ -4,7 +4,7 @@
  *
  * */
 
-var AChart = require('acharts'),//window.AChart,
+var AChart = window.AChart,//require('acharts'),//
     Cartesian = AChart.Series.Cartesian,
     ActiveGroup = AChart.Actived.Group,
     Flags = AChart.Flags,

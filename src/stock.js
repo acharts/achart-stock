@@ -1,4 +1,4 @@
-var Chart = require('acharts'),//window.AChart,
+var Chart = window.AChart,//require('acharts'),//
     Util = Chart.Util,
     Tooltip = Chart.Tooltip,
     Theme = Chart.Theme;
