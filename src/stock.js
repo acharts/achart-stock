@@ -756,7 +756,7 @@ Util.augment(Stock,{
                         newData = data.slice(startIndex,endIndex + 1);
                         var start = (startTime || pointStart);
                         if(start != pointStart && start % pointInterval != 0){
-                            start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
+                            //start = parseInt((startTime || pointStart)/pointInterval) * pointInterval;
                         }
                         targetSeries.set('pointStart',start);
                     }else{
