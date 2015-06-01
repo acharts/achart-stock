@@ -26,6 +26,9 @@ Theme.rangeSelector = {
         areaCfg : {
             markers: null,
             animate: false,
+            line: {
+              stroke : '#ddd'
+            },
             area: {
              'fill-opacity': 0.5,
              fill : '#efefef',
