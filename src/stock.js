@@ -37,6 +37,8 @@ Theme.rangeSelector = {
             }
         }
     },
+    //是否显示
+    hidden: false,
     //最小区间
     minZoomInterval:false,
     //是否实时数据
@@ -202,7 +204,7 @@ Util.augment(Stock,{
         }else{
             rangeSelector.changeData(data[0]);
         }
-        
+
         Util.each(originData,function(item,index){
             item.data = data[index];
         });
@@ -285,6 +287,8 @@ Util.augment(Stock,{
         var rangeSelector = new Chart(options);
 
         _self.set('rangeSelector',rangeSelector);
+
+        //console.log(_self.get('rangeSelectorOption').hidden);
     },
     //初始化chart
     _initChart: function(){
@@ -301,13 +305,14 @@ Util.augment(Stock,{
             var charts = [];
             for(var i = 0;i < plots.length;i ++){
                 var plot = plots[i];
-                var chart = new Chart(Util.mix({},_self._attrs,{
+                var xAxis = _self._attrs.xAxis;
+                var cfg = Util.mix({},{
                     id: chartId + '-' + i,
                     width: width,
-                    height: plot.height,
                     legend: null,
                     tooltip: null
-                }));
+                },plot);
+                var chart = new Chart(Util.mix({},_self._attrs,cfg));
                 charts.push(chart);
             }
             _self.set('chart',charts[0]);
@@ -373,6 +378,10 @@ Util.augment(Stock,{
         rangeSelector.set('series',newSeries);
 
         rangeSelector.render();
+
+        if(_self.get('rangeSelectorOption').hidden){
+            rangeSelector.get('canvas').get('node').style.display = 'none';
+        }
     },
     //对于多个chart stock上面渲染一个tooltip
     _renderTooltip: function(){
@@ -387,15 +396,15 @@ Util.augment(Stock,{
             var canvas = chart.get('canvas'),
                 plotRange = chart.get('plotRange'),
                 cfg = Util.mix({}, _self._attrs.tooltip || {}, {
-                    title: {
+                    /*title: {
                         y: 12,
                         x: 8
                     },
                     offset: 10,
                     animate: false,
-                    plotRange: plotRange,
                     crosshairs: false,
-                    visible: false
+                    visible: false,*/
+                    plotRange: plotRange
                 });
 
             //绘制crosshairs
@@ -419,13 +428,12 @@ Util.augment(Stock,{
                         type : 'line',
                         visible : false,
                         zIndex : 3,
-                        attrs : {
-                            stroke : stroke,
+                        attrs : Util.mix({}, _self.get('tooltip').crossLine || {}, {
                             x1 : 0,
                             y1 : y1,
                             x2 : 0,
                             y2 : y2
-                        }
+                        })
                     });
                     crosshairsGroup.push(shape);
                 });
@@ -456,13 +464,29 @@ Util.augment(Stock,{
                 });
 
                 chart.on('plotmove', function (ev) {
-                    tooltip.show()
+                    var tipCfg = _self.get('tooltip');
+                    if(tipCfg.tipmove){
+                        tipCfg.tipmove(ev);
+                    }
+                    tooltip.show();
                     var point = {
                         x: ev.x,
                         y: ev.y
                     }, crosshairsGroup = _self.get('crosshairsGroup');
 
                     var tipInfo = _self._getTipInfo(point);
+                    if(tipInfo.items.length == 0){
+                        tooltip.hide();
+                        tooltip.setPosition(point.x, point.y);
+                        Util.each(crosshairsGroup, function (item, index) {
+                            item.attr({
+                                x1: ev.x,
+                                x2: ev.x
+                            });
+                            item.hide();
+                        })
+                        return;
+                    }
 
                     tooltip.setTitle(tipInfo.title);
                     tooltip.setItems(tipInfo.items);
@@ -475,6 +499,8 @@ Util.augment(Stock,{
                         });
                         item.show();
                     })
+
+
                 });
             });
         }
