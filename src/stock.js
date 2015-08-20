@@ -253,7 +253,7 @@ Util.augment(Stock,{
         var plots = _self.get('rangeSelectorOption').plots;
         if(plots && plots.length > 0){
             for(var i = 0;i < plots.length;i ++){
-                var html =  Util.createDom('<div id="'+ chartId +'-'+ i +'"></div>');
+                var html =  Util.createDom('<div id="'+ chartId +'-'+ i +'" style="height:'+ plots[i].height +'px"></div>');
                 chartHtml.appendChild(html);
             }
         }
@@ -392,7 +392,7 @@ Util.augment(Stock,{
         //Util.each(charts,function(chart,index){
         //多个plot
         var plots = _self.get('rangeSelectorOption').plots;
-        if(plots && plots.length > 0) {
+        if(plots && plots.length > 0 && _self.get('tooltip')) {
             var canvas = chart.get('canvas'),
                 plotRange = chart.get('plotRange'),
                 cfg = Util.mix({}, _self._attrs.tooltip || {}, {
@@ -440,21 +440,12 @@ Util.augment(Stock,{
 
                 _self.set('crosshairsGroup',crosshairsGroup)
             }
-
             var tooltip = canvas.addGroup(Tooltip, cfg);
-
+            var tipTimeout,tipDuration = 300;
             Util.each(charts,function(chart,index) {
-                chart.on('plotover', function (ev) {
-                    var crosshairsGroup = _self.get('crosshairsGroup');
-                    tooltip.show()
-                    if (crosshairsGroup) {
-                        Util.each(crosshairsGroup, function (item, index) {
-                            item.show();
-                        })
-                    }
-                });
+                var canvas = chart.get('canvas');
 
-                chart.on('plotout', function (ev) {
+                canvas.on('mouseout', function (ev) {
                     tooltip.hide();
                     if (crosshairsGroup) {
                         Util.each(crosshairsGroup, function (item, index) {
@@ -498,9 +489,7 @@ Util.augment(Stock,{
                             x2: ev.x
                         });
                         item.show();
-                    })
-
-
+                    });
                 });
             });
         }
