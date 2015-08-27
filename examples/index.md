@@ -6,7 +6,7 @@
 
 
 ````html
-<script src="http://g.tbcdn.cn/bui/acharts/1.0.33/acharts.js"></script>
+<script src="http://g-assets.daily.taobao.net/bui/acharts/1.0.34/acharts.js"></script>
 <div id="canvas"></div>
 ````
 
@@ -56,8 +56,13 @@ seajs.use('astock', function(AStock) {
       },
       xAxis : {//格式化时间
           type : 'time' ,
-          formatter : function(value)   {
-              return Chart.Date.format(new Date(value),'yyyy-mm-dd hh:MM:ss');
+          formatter : function(value) {
+              return Chart.Date.format(new Date(value),'hh:MM:ss');
+          },
+          labels: {
+            label: {
+              y: -10
+            }
           },
           animate : false
       },
@@ -66,6 +71,12 @@ seajs.use('astock', function(AStock) {
           grid : {
               animate : false
           },
+          //第一个坐标不显示
+          labels: {
+            renderer: function(label,item,index){
+              return index > 0 ? label : ' ';
+            }
+          },
           animate : false
       },{
         position: 'right',
@@ -73,6 +84,9 @@ seajs.use('astock', function(AStock) {
             animate : false
         },
         labels : {
+          renderer: function(label,item,index){
+            return index > 0 ? label : ' ';
+          },
           label: {
             x: 30
           }
@@ -80,42 +94,24 @@ seajs.use('astock', function(AStock) {
         animate : false
       }],
       seriesOptions : {
-          candlestickCfg : { //设置k线图的图形配置
-              animate : false,
-              candlesticks:{
-                  candlestick:{
-                      riseShape: {
-                          fill : '#fff'
-                      },
-                      fallShape: {
-
-                      }
-                  }
-              }
+          columnCfg : { //设置柱状图的图形配置
+            reverse: true,
+            autoWidth: false,
+            columnWidth: 10
           }
       },
       xTickCounts : [1,5],//设置x轴tick最小数目和最大数目
       rangeSelectorOption: {
         hidden: true,
-        xAxis: {
-            grid : {
-                line : {
-                    stroke : '#ddd'
-                }
-            },
-            labels : {
-                label : {
-                    'text-anchor' : 'middle',
-                    y: -5
-                }
-            },
-            formatter : function(value)   {
-                return Chart.Date.format(new Date(value),'yyyy.mm.dd');
+        plots: [{     //配置每个屏幕的配置项
+            height: 300,
+            plotCfg : {
+              margin : [10,50,0,50] //画板的边距
             }
-        },
-        plots: [{ //配置每个屏幕的配置项
-            height: 300
         },{
+            plotCfg : {
+              margin : [0,50,20,50] //画板的边距
+            },
             height: 300,
             xAxis: {
               type : 'time' ,
@@ -126,14 +122,15 @@ seajs.use('astock', function(AStock) {
               animate : false
             },
             yAxis: {
-              position: 'left'
+              position: 'left',
+              reverse: true,
+              labels: {
+                label: {
+                  y: 8
+                }
+              }
             }
-        }],
-        dragRefresh: false,
-        sampling: { //由于数据过大，当超过200的时候进行采样合并处理
-            enable: true,
-            max: 200
-        }
+        }]
       },
       tooltip : {
           offset: 10,
